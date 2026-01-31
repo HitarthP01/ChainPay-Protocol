@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChainPay - Watch-to-Earn Demo</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <span class="logo-icon">⛓️</span>
+                <h1>ChainPay</h1>
+            </div>
+            <div class="tagline">Watch-to-Earn • Real-time Blockchain Micropayments</div>
+        </header>
+
+        <!-- Connection Status -->
+        <div class="status-bar">
+            <div class="status-item">
+                <span class="status-dot" id="blockchainStatus"></span>
+                <span id="blockchainStatusText">Connecting...</span>
+            </div>
+            <div class="status-item">
+                <span class="status-dot" id="wsStatus"></span>
+                <span id="wsStatusText">WebSocket Disconnected</span>
+            </div>
+            <div class="status-item">
+                <span>Block: </span>
+                <span id="currentBlock">-</span>
+            </div>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="main-grid">
+            <!-- Wallet Panel -->
+            <section class="panel wallet-panel">
+                <h2>💳 Your Ephemeral Wallet</h2>
+                <div class="wallet-info">
+                    <div class="wallet-address-container">
+                        <label>Address:</label>
+                        <div class="address-row">
+                            <code id="walletAddress">Not Generated</code>
+                            <button id="copyAddressBtn" class="btn-icon" title="Copy Address">📋</button>
+                        </div>
+                    </div>
+                    
+                    <div class="balance-display">
+                        <div class="balance-main">
+                            <span id="balanceEth">0.000000</span>
+                            <span class="currency">ETH</span>
+                        </div>
+                        <div class="balance-wei">
+                            <span id="balanceWei">0</span> wei
+                        </div>
+                    </div>
+
+                    <div class="wallet-actions">
+                        <button id="generateWalletBtn" class="btn btn-primary">
+                            🔑 Generate New Wallet
+                        </button>
+                        <button id="refreshBalanceBtn" class="btn btn-secondary">
+                            🔄 Refresh Balance
+                        </button>
+                    </div>
+
+                    <div class="wallet-security-notice">
+                        ⚠️ This is an ephemeral wallet for demo purposes. 
+                        Private keys are stored in browser memory only.
+                    </div>
+                </div>
+            </section>
+
+            <!-- Ad Viewer Panel -->
+            <section class="panel ad-panel">
+                <h2>📺 Ad Viewer - Earn While You Watch!</h2>
+                <div class="ad-container">
+                    <div class="ad-display" id="adDisplay">
+                        <div class="ad-placeholder">
+                            <div class="ad-icon">🎬</div>
+                            <p>Click "Start Watching" to begin earning</p>
+                        </div>
+                    </div>
+                    
+                    <div class="ad-progress">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="adProgress"></div>
+                        </div>
+                        <span id="adTimer">0s</span>
+                    </div>
+
+                    <div class="ad-controls">
+                        <button id="startWatchingBtn" class="btn btn-success btn-large" disabled>
+                            ▶️ Start Watching
+                        </button>
+                        <button id="stopWatchingBtn" class="btn btn-danger btn-large" disabled>
+                            ⏹️ Stop
+                        </button>
+                    </div>
+
+                    <div class="earnings-info">
+                        <div class="earning-stat">
+                            <label>Heartbeats Sent:</label>
+                            <span id="heartbeatCount">0</span>
+                        </div>
+                        <div class="earning-stat">
+                            <label>Session Earnings:</label>
+                            <span id="sessionEarnings">0</span> wei
+                        </div>
+                        <div class="earning-stat">
+                            <label>Rate:</label>
+                            <span id="rewardRate">1000</span> wei/heartbeat
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Treasury Panel -->
+            <section class="panel treasury-panel">
+                <h2>🏦 Treasury Stats</h2>
+                <div class="treasury-stats">
+                    <div class="stat-card">
+                        <div class="stat-value" id="treasuryBalance">0</div>
+                        <div class="stat-label">Treasury Balance (ETH)</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalDistributed">0</div>
+                        <div class="stat-label">Total Distributed (ETH)</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalClaims">0</div>
+                        <div class="stat-label">Total Claims</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="activeConnections">0</div>
+                        <div class="stat-label">Active Users</div>
+                    </div>
+                </div>
+                <div class="contract-info">
+                    <label>Contract:</label>
+                    <code id="contractAddress">Not Connected</code>
+                </div>
+            </section>
+
+            <!-- Transaction Log Panel -->
+            <section class="panel log-panel">
+                <h2>📜 Transaction Log</h2>
+                <div class="log-controls">
+                    <button id="clearLogBtn" class="btn btn-small">Clear</button>
+                    <label>
+                        <input type="checkbox" id="autoScrollLog" checked>
+                        Auto-scroll
+                    </label>
+                </div>
+                <div class="transaction-log" id="transactionLog">
+                    <div class="log-entry info">
+                        <span class="log-time">--:--:--</span>
+                        <span class="log-message">Waiting for connection...</span>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>ChainPay Watch-to-Earn Demo • Powered by Ethereum • 
+                <a href="#" id="showTechDetails">Technical Details</a>
+            </p>
+        </footer>
+
+        <!-- Technical Details Modal -->
+        <div class="modal" id="techModal">
+            <div class="modal-content">
+                <span class="modal-close" id="closeTechModal">&times;</span>
+                <h2>⚙️ Technical Architecture</h2>
+                <div class="tech-details">
+                    <h3>🔗 Blockchain Layer</h3>
+                    <ul>
+                        <li>Private Ethereum-compatible network (Hardhat)</li>
+                        <li>RewardTreasury smart contract manages micropayments</li>
+                        <li>Transactions denominated in Wei (10⁻¹⁸ ETH)</li>
+                    </ul>
+                    
+                    <h3>🖥️ Backend (Go)</h3>
+                    <ul>
+                        <li>go-ethereum for blockchain interactions</li>
+                        <li>Automated transaction signing</li>
+                        <li>WebSocket for real-time updates</li>
+                        <li>Block health monitoring</li>
+                    </ul>
+                    
+                    <h3>🌐 Frontend (JavaScript)</h3>
+                    <ul>
+                        <li>Ephemeral wallet generation (ethers.js)</li>
+                        <li>Heartbeat mechanism for ad-view verification</li>
+                        <li>Live balance updates from blockchain</li>
+                    </ul>
+                    
+                    <h3>💡 The "Micro" Mechanic</h3>
+                    <p>
+                        Each ad-view heartbeat (every 5 seconds) triggers a blockchain 
+                        transaction of 1000 wei. This demonstrates granular rewards 
+                        impossible with traditional payment systems.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/ethers@6.9.0/dist/ethers.umd.min.js"></script>
+    <script src="wallet.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

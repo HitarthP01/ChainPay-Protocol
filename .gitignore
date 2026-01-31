@@ -1,0 +1,51 @@
+# Dependencies
+node_modules/
+vendor/
+
+# Build outputs
+blockchain/artifacts/
+blockchain/cache/
+blockchain/typechain-types/
+backend/chainpay-backend
+backend/chainpay-backend.exe
+
+# Deployment files (contain private keys for local dev)
+blockchain/deployments/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Test coverage
+coverage/
+coverage.json
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+go.work
