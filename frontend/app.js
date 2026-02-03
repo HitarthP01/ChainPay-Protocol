@@ -5,13 +5,17 @@
 
 class ChainPayApp {
     constructor() {
-        // Configuration
+        // Use external config if available, otherwise defaults
+        const externalConfig = window.ChainPayConfig || {};
+        
+        // Configuration - supports both local dev and deployed demo mode
         this.config = {
-            backendUrl: 'http://localhost:8080',
-            wsUrl: 'ws://localhost:8080/ws',
-            heartbeatInterval: 5000, // 5 seconds
-            balanceRefreshInterval: 10000, // 10 seconds
-            reconnectDelay: 3000
+            backendUrl: externalConfig.backendUrl || 'http://localhost:8080',
+            wsUrl: externalConfig.wsUrl || 'ws://localhost:8080/ws',
+            heartbeatInterval: externalConfig.heartbeatInterval || 5000,
+            balanceRefreshInterval: externalConfig.balanceRefreshInterval || 10000,
+            reconnectDelay: 3000,
+            demoMode: externalConfig.demoMode || !externalConfig.backendUrl
         };
 
         // State
@@ -23,8 +27,11 @@ class ChainPayApp {
         this.watchStartTime = null;
         this.heartbeatCount = 0;
         this.sessionEarnings = BigInt(0);
-        this.rewardPerHeartbeat = BigInt(1000);
+        this.rewardPerHeartbeat = BigInt(externalConfig.rewardPerHeartbeat || 1000);
         this.currentAdIndex = 0;
+        
+        // Demo mode state
+        this.demoBalance = BigInt(0);
 
         // Sample ads for demo
         this.sampleAds = [
@@ -137,9 +144,22 @@ class ChainPayApp {
     }
 
     /**
-     * Connect to WebSocket server
+     * Connect to WebSocket server (or enable demo mode)
      */
     connectWebSocket() {
+        // Demo mode - simulate connection for GitHub Pages deployment
+        if (this.config.demoMode) {
+            console.log('🎮 Running in DEMO MODE (no backend required)');
+            this.updateWsStatus('demo');
+            this.updateBlockchainStatus('demo');
+            this.log('info', '🎮 DEMO MODE: Simulating blockchain interactions locally');
+            this.log('info', 'In production, this connects to a real Go backend + smart contract');
+            
+            // Simulate block updates in demo mode
+            this.startDemoBlockUpdates();
+            return;
+        }
+        
         console.log('🔌 Connecting to WebSocket...');
         this.updateWsStatus('connecting');
 
@@ -279,6 +299,12 @@ class ChainPayApp {
             return;
         }
 
+        // In demo mode, just update display with cached balance
+        if (this.config.demoMode) {
+            this.updateBalanceDisplay();
+            return;
+        }
+
         try {
             const response = await fetch(`${this.config.backendUrl}/api/balance/${this.wallet.getAddress()}`);
             if (response.ok) {
@@ -397,6 +423,13 @@ class ChainPayApp {
     sendHeartbeat() {
         if (!this.isWatching || !this.wallet.isInitialized()) return;
 
+        // Demo mode - simulate rewards locally
+        if (this.config.demoMode) {
+            this.simulateDemoHeartbeat();
+            this.showNextAd();
+            return;
+        }
+
         // Use WebSocket if connected
         if (this.websocket && this.websocket.readyState === WebSocket.OPEN) {
             this.websocket.send(JSON.stringify({
@@ -411,6 +444,27 @@ class ChainPayApp {
 
         // Rotate to next ad
         this.showNextAd();
+    }
+
+    /**
+     * Simulate heartbeat reward in demo mode
+     */
+    simulateDemoHeartbeat() {
+        this.heartbeatCount++;
+        this.sessionEarnings += this.rewardPerHeartbeat;
+        this.demoBalance += this.rewardPerHeartbeat;
+        
+        // Update UI
+        this.elements.heartbeatCount.textContent = this.heartbeatCount;
+        this.elements.sessionEarnings.textContent = this.sessionEarnings.toString();
+        this.wallet.updateBalance(this.demoBalance);
+        this.updateBalanceDisplay();
+        
+        // Generate fake tx hash for realism
+        const fakeTxHash = '0x' + Array.from({length: 64}, () => 
+            Math.floor(Math.random() * 16).toString(16)).join('');
+        
+        this.log('reward', `+${this.rewardPerHeartbeat} wei (Demo TX: ${fakeTxHash.slice(0, 18)}...)`);
     }
 
     /**
@@ -463,6 +517,11 @@ class ChainPayApp {
      * Start background tasks
      */
     startBackgroundTasks() {
+        // Skip backend calls in demo mode
+        if (this.config.demoMode) {
+            return;
+        }
+        
         // Fetch treasury stats periodically
         this.fetchTreasuryStats();
         setInterval(() => this.fetchTreasuryStats(), 10000);
@@ -483,6 +542,8 @@ class ChainPayApp {
      * Fetch treasury statistics
      */
     async fetchTreasuryStats() {
+        if (this.config.demoMode) return;
+        
         try {
             const response = await fetch(`${this.config.backendUrl}/api/stats`);
             if (response.ok) {
@@ -519,27 +580,6 @@ class ChainPayApp {
     }
 
     /**
-     * Update blockchain connection status
-     */
-    updateBlockchainStatus(status) {
-        const dot = this.elements.blockchainStatus;
-        const text = this.elements.blockchainStatusText;
-
-        dot.className = 'status-dot ' + status;
-        
-        switch (status) {
-            case 'connected':
-                text.textContent = 'Blockchain Connected';
-                break;
-            case 'disconnected':
-                text.textContent = 'Blockchain Disconnected';
-                break;
-            default:
-                text.textContent = 'Connecting...';
-        }
-    }
-
-    /**
      * Update WebSocket connection status
      */
     updateWsStatus(status) {
@@ -559,6 +599,63 @@ class ChainPayApp {
                 text.textContent = 'Connecting...';
                 dot.className = 'status-dot connecting';
                 break;
+            case 'demo':
+                text.textContent = '🎮 Demo Mode (Simulated)';
+                dot.className = 'status-dot connected';
+                break;
+        }
+    }
+
+    /**
+     * Update blockchain connection status
+     */
+    updateBlockchainStatus(status) {
+        const dot = this.elements.blockchainStatus;
+        const text = this.elements.blockchainStatusText;
+
+        if (!dot || !text) return;
+        
+        dot.className = 'status-dot ' + status;
+
+        switch (status) {
+            case 'connected':
+                text.textContent = 'Blockchain Connected';
+                break;
+            case 'disconnected':
+                text.textContent = 'Blockchain Disconnected';
+                break;
+            case 'demo':
+                text.textContent = '🎮 Demo Blockchain';
+                dot.className = 'status-dot connected';
+                break;
+            default:
+                text.textContent = 'Connecting...';
+        }
+    }
+
+    /**
+     * Start simulated block updates for demo mode
+     */
+    startDemoBlockUpdates() {
+        let blockNumber = 1000000 + Math.floor(Math.random() * 100000);
+        
+        // Update block number every 2 seconds
+        setInterval(() => {
+            blockNumber++;
+            if (this.elements.currentBlock) {
+                this.elements.currentBlock.textContent = blockNumber.toLocaleString();
+            }
+        }, 2000);
+        
+        // Set demo treasury values
+        if (this.elements.treasuryBalance) {
+            this.elements.treasuryBalance.textContent = '100.0 ETH';
+        }
+        if (this.elements.totalDistributed) {
+            this.elements.totalDistributed.textContent = '0.05 ETH';
+        }
+        if (this.elements.contractAddress) {
+            this.elements.contractAddress.textContent = '0xDemo...Contract';
         }
     }
 

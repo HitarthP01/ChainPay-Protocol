@@ -301,6 +301,47 @@ Default reward: **1000 wei** per heartbeat (every 5 seconds)
 3. Make your changes
 4. Submit a pull request
 
+## 🌐 Free Hosting / Deployment
+
+### GitHub Pages (Frontend Demo)
+
+The easiest way to share your project! Push to GitHub and enable Pages:
+
+1. **Push to GitHub**:
+   ```bash
+   git add .
+   git commit -m "Add deployment config"
+   git push origin main
+   ```
+
+2. **Enable GitHub Pages**:
+   - Go to your repo → Settings → Pages
+   - Source: "GitHub Actions"
+   - The workflow in `.github/workflows/deploy.yml` will auto-deploy
+
+3. **Access your demo**:
+   - URL: `https://yourusername.github.io/ChainPay-Protocol`
+
+> **Note**: GitHub Pages runs in **Demo Mode** - it simulates blockchain interactions in the browser. Perfect for showcasing the UI and concept!
+
+### Full Stack Deployment
+
+For a complete deployment with real blockchain interaction:
+
+| Component | Free Hosting Options |
+|-----------|---------------------|
+| **Frontend** | GitHub Pages, Vercel, Netlify |
+| **Backend (Go)** | Render.com, Railway.app, Fly.io |
+| **Blockchain** | Sepolia/Mumbai testnets (free) |
+
+To deploy on a testnet, update `blockchain/hardhat.config.js`:
+```javascript
+sepolia: {
+  url: "https://rpc.sepolia.org",
+  accounts: [process.env.PRIVATE_KEY]
+}
+```
+
 ## 📄 License
 
 MIT License - see LICENSE file for details
