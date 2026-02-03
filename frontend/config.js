@@ -7,18 +7,26 @@ const ChainPayConfig = {
     // Detect if running locally or deployed
     isLocal: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1',
     
+    // ⚠️ UPDATE THIS after deploying your backend to Render.com!
+    // Example: 'https://chainpay-backend.onrender.com'
+    deployedBackendUrl: null,  // Set to your Render URL when deployed
+    
     // Backend URLs
     get backendUrl() {
         if (this.isLocal) {
             return 'http://localhost:8080';
         }
-        // For GitHub Pages demo, we'll run in demo mode (no backend)
-        return null;
+        // Use deployed backend if configured, otherwise demo mode
+        return this.deployedBackendUrl;
     },
     
     get wsUrl() {
         if (this.isLocal) {
             return 'ws://localhost:8080/ws';
+        }
+        if (this.deployedBackendUrl) {
+            // Convert https to wss for WebSocket
+            return this.deployedBackendUrl.replace('https://', 'wss://').replace('http://', 'ws://') + '/ws';
         }
         return null;
     },
@@ -39,8 +47,10 @@ const ChainPayConfig = {
         }
     },
     
-    // Demo mode for showcasing without backend
-    demoMode: true, // Set to false when you have a deployed backend
+    // Demo mode - enabled when no backend URL is configured
+    get demoMode() {
+        return !this.backendUrl;
+    },
     
     // Heartbeat settings
     heartbeatInterval: 5000,

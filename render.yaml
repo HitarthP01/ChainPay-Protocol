@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: chainpay-backend
+    runtime: go
+    plan: free
+    buildCommand: cd backend && go build -o server .
+    startCommand: cd backend && ./server
+    envVars:
+      - key: PORT
+        value: 8080
+      - key: RPC_ENDPOINT
+        sync: false  # Set manually in Render dashboard
+      - key: CONTRACT_ADDRESS
+        sync: false  # Set after deploying to testnet
+      - key: SIGNER_PRIVATE_KEY
+        sync: false  # Set manually (keep secret!)
