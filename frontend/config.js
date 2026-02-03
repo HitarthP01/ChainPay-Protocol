@@ -9,7 +9,7 @@ const ChainPayConfig = {
     
     // ⚠️ UPDATE THIS after deploying your backend to Render.com!
     // Example: 'https://chainpay-backend.onrender.com'
-    deployedBackendUrl: deployedBackendUrl: 'https://chainpay-backend.onrender.com',  // Set to your Render URL when deployed
+    deployedBackendUrl: 'https://chainpay-backend.onrender.com',  // Set to your Render URL when deployed
     
     // Backend URLs
     get backendUrl() {
@@ -37,7 +37,7 @@ const ChainPayConfig = {
         sepolia: {
             chainId: 11155111,
             rpcUrl: 'https://rpc.sepolia.org',
-            rewardTreasury: '' // Add after deploying: npx hardhat run scripts/deploy.js --network sepolia
+            rewardTreasury: '0x6F97e4B86084C66244C76bF1Ab632E8B82aB3637'
         },
         // Local Hardhat
         localhost: {
