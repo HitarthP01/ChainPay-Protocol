@@ -7,10 +7,13 @@
     "compile": "npx hardhat compile",
     "deploy": "npx hardhat run scripts/deploy.js --network localhost",
     "deploy:local": "npx hardhat run scripts/deploy.js --network hardhat",
-    "test": "npx hardhat test"
+    "deploy:sepolia": "npx hardhat run scripts/deploy-sepolia.js --network sepolia",
+    "test": "npx hardhat test",
+    "verify": "npx hardhat verify --network sepolia"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "dotenv": "^16.3.1",
     "hardhat": "^2.19.0"
   },
   "keywords": ["ethereum", "blockchain", "watch-to-earn", "micropayments"],
