@@ -9,7 +9,7 @@ const ChainPayConfig = {
     
     // ⚠️ UPDATE THIS after deploying your backend to Render.com!
     // Example: 'https://chainpay-backend.onrender.com'
-    deployedBackendUrl: 'https://chainpay-backend.onrender.com',  // Set to your Render URL when deployed
+    deployedBackendUrl: 'https://chainpay-protocol.onrender.com',  // Set to your Render URL when deployed
     
     // Backend URLs
     get backendUrl() {
