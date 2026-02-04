@@ -247,8 +247,18 @@ class ChainPayApp {
             this.sessionEarnings += rewardWei;
             this.elements.sessionEarnings.textContent = this.sessionEarnings.toString();
 
+            // Update balance from backend (actual blockchain balance)
             if (data.balance_wei) {
                 this.wallet.updateBalance(data.balance_wei);
+                this.updateBalanceDisplay();
+            } else if (data.total_earned) {
+                // Fallback: use total earned from session
+                this.wallet.updateBalance(data.total_earned);
+                this.updateBalanceDisplay();
+            } else {
+                // Last resort: track locally
+                const currentBalance = this.wallet.getBalanceWei();
+                this.wallet.updateBalance(currentBalance + rewardWei);
                 this.updateBalanceDisplay();
             }
 
