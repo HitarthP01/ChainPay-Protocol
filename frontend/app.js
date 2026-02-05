@@ -8,14 +8,21 @@ class ChainPayApp {
         // Use external config if available, otherwise defaults
         const externalConfig = window.ChainPayConfig || {};
         
+        // Get actual values from getters
+        const backendUrl = externalConfig.backendUrl || 'http://localhost:8080';
+        const wsUrl = externalConfig.wsUrl || 'ws://localhost:8080/ws';
+        const isDemoMode = externalConfig.demoMode !== undefined ? externalConfig.demoMode : !backendUrl;
+        
+        console.log('🔧 Config loaded:', { backendUrl, wsUrl, isDemoMode });
+        
         // Configuration - supports both local dev and deployed demo mode
         this.config = {
-            backendUrl: externalConfig.backendUrl || 'http://localhost:8080',
-            wsUrl: externalConfig.wsUrl || 'ws://localhost:8080/ws',
+            backendUrl: backendUrl,
+            wsUrl: wsUrl,
             heartbeatInterval: externalConfig.heartbeatInterval || 5000,
             balanceRefreshInterval: externalConfig.balanceRefreshInterval || 10000,
             reconnectDelay: 3000,
-            demoMode: externalConfig.demoMode || !externalConfig.backendUrl
+            demoMode: isDemoMode
         };
 
         // State
@@ -433,6 +440,11 @@ class ChainPayApp {
     sendHeartbeat() {
         if (!this.isWatching || !this.wallet.isInitialized()) return;
 
+        console.log('💓 Sending heartbeat...', { 
+            demoMode: this.config.demoMode, 
+            wsConnected: this.websocket?.readyState === WebSocket.OPEN 
+        });
+
         // Demo mode - simulate rewards locally
         if (this.config.demoMode) {
             this.simulateDemoHeartbeat();
@@ -442,6 +454,7 @@ class ChainPayApp {
 
         // Use WebSocket if connected
         if (this.websocket && this.websocket.readyState === WebSocket.OPEN) {
+            console.log('📤 Sending via WebSocket');
             this.websocket.send(JSON.stringify({
                 type: 'heartbeat',
                 wallet_address: this.wallet.getAddress(),
@@ -449,6 +462,7 @@ class ChainPayApp {
             }));
         } else {
             // Fallback to HTTP
+            console.log('📤 WebSocket not connected, using HTTP fallback');
             this.sendHeartbeatHttp();
         }
 
@@ -481,6 +495,7 @@ class ChainPayApp {
      * Send heartbeat via HTTP (fallback)
      */
     async sendHeartbeatHttp() {
+        console.log('📤 Sending heartbeat via HTTP to:', this.config.backendUrl);
         try {
             const response = await fetch(`${this.config.backendUrl}/api/heartbeat`, {
                 method: 'POST',
@@ -494,16 +509,20 @@ class ChainPayApp {
 
             if (response.ok) {
                 const data = await response.json();
+                console.log('📥 Heartbeat response:', data);
                 this.handleRewardMessage({
                     success: data.success,
                     reward_wei: data.reward_wei,
                     tx_hash: data.tx_hash,
-                    balance_wei: data.new_balance ? 
-                        (parseFloat(data.new_balance) * 1e18).toString() : null
+                    balance_wei: data.new_balance_wei || data.balance_wei
                 });
+            } else {
+                console.error('Heartbeat response not ok:', response.status);
             }
         } catch (error) {
             console.error('Heartbeat failed:', error);
+            // Fallback to demo mode simulation if HTTP also fails
+            this.simulateDemoHeartbeat();
         }
     }
 
