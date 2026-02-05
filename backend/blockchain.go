@@ -206,16 +206,22 @@ func (bc *BlockchainClient) sendContractReward(recipient string, amount *big.Int
 		return "", fmt.Errorf("failed to pack function call: %w", err)
 	}
 
-	// Get gas price
-	gasPrice, err := bc.client.SuggestGasPrice(context.Background())
+	// Get gas price with 20% buffer to ensure transaction goes through
+	suggestedGasPrice, err := bc.client.SuggestGasPrice(context.Background())
 	if err != nil {
 		return "", fmt.Errorf("failed to get gas price: %w", err)
 	}
+	// Add 20% buffer to gas price
+	gasPrice := new(big.Int).Mul(suggestedGasPrice, big.NewInt(120))
+	gasPrice = gasPrice.Div(gasPrice, big.NewInt(100))
 
-	// Get nonce with mutex to prevent race conditions
+	// Always fetch fresh nonce from blockchain to avoid "replacement transaction underpriced" errors
 	bc.nonceMux.Lock()
-	nonce := bc.currentNonce
-	bc.currentNonce++
+	nonce, err := bc.client.PendingNonceAt(context.Background(), bc.signerAddress)
+	if err != nil {
+		bc.nonceMux.Unlock()
+		return "", fmt.Errorf("failed to get nonce: %w", err)
+	}
 	bc.nonceMux.Unlock()
 
 	// Estimate gas
@@ -228,12 +234,11 @@ func (bc *BlockchainClient) sendContractReward(recipient string, amount *big.Int
 
 	gasLimit, err := bc.client.EstimateGas(context.Background(), msg)
 	if err != nil {
-		// Reset nonce on failure
-		bc.nonceMux.Lock()
-		bc.currentNonce--
-		bc.nonceMux.Unlock()
 		return "", fmt.Errorf("failed to estimate gas: %w", err)
 	}
+
+	// Add 10% buffer to gas limit
+	gasLimit = gasLimit * 110 / 100
 
 	// Create transaction
 	tx := types.NewTransaction(
@@ -248,20 +253,16 @@ func (bc *BlockchainClient) sendContractReward(recipient string, amount *big.Int
 	// Sign transaction
 	signedTx, err := types.SignTx(tx, types.NewEIP155Signer(bc.chainID), bc.privateKey)
 	if err != nil {
-		bc.nonceMux.Lock()
-		bc.currentNonce--
-		bc.nonceMux.Unlock()
 		return "", fmt.Errorf("failed to sign transaction: %w", err)
 	}
 
 	// Send transaction
 	err = bc.client.SendTransaction(context.Background(), signedTx)
 	if err != nil {
-		bc.nonceMux.Lock()
-		bc.currentNonce--
-		bc.nonceMux.Unlock()
 		return "", fmt.Errorf("failed to send transaction: %w", err)
 	}
+
+	log.Printf("📤 Transaction sent: %s (nonce: %d, gasPrice: %s)", signedTx.Hash().Hex()[:16]+"...", nonce, gasPrice.String())
 
 	return signedTx.Hash().Hex(), nil
 }
@@ -274,16 +275,21 @@ func (bc *BlockchainClient) sendDirectTransfer(recipient string, amount *big.Int
 
 	recipientAddr := common.HexToAddress(recipient)
 
-	// Get gas price
-	gasPrice, err := bc.client.SuggestGasPrice(context.Background())
+	// Get gas price with 20% buffer
+	suggestedGasPrice, err := bc.client.SuggestGasPrice(context.Background())
 	if err != nil {
 		return "", fmt.Errorf("failed to get gas price: %w", err)
 	}
+	gasPrice := new(big.Int).Mul(suggestedGasPrice, big.NewInt(120))
+	gasPrice = gasPrice.Div(gasPrice, big.NewInt(100))
 
-	// Get nonce with mutex
+	// Always fetch fresh nonce from blockchain
 	bc.nonceMux.Lock()
-	nonce := bc.currentNonce
-	bc.currentNonce++
+	nonce, err := bc.client.PendingNonceAt(context.Background(), bc.signerAddress)
+	if err != nil {
+		bc.nonceMux.Unlock()
+		return "", fmt.Errorf("failed to get nonce: %w", err)
+	}
 	bc.nonceMux.Unlock()
 
 	// Create transaction
@@ -299,20 +305,16 @@ func (bc *BlockchainClient) sendDirectTransfer(recipient string, amount *big.Int
 	// Sign transaction
 	signedTx, err := types.SignTx(tx, types.NewEIP155Signer(bc.chainID), bc.privateKey)
 	if err != nil {
-		bc.nonceMux.Lock()
-		bc.currentNonce--
-		bc.nonceMux.Unlock()
 		return "", fmt.Errorf("failed to sign transaction: %w", err)
 	}
 
 	// Send transaction
 	err = bc.client.SendTransaction(context.Background(), signedTx)
 	if err != nil {
-		bc.nonceMux.Lock()
-		bc.currentNonce--
-		bc.nonceMux.Unlock()
 		return "", fmt.Errorf("failed to send transaction: %w", err)
 	}
+
+	log.Printf("📤 Direct transfer sent: %s (nonce: %d)", signedTx.Hash().Hex()[:16]+"...", nonce)
 
 	return signedTx.Hash().Hex(), nil
 }
