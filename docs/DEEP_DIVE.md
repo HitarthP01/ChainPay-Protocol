@@ -547,23 +547,116 @@ If deploying this for real users:
 
 ### 2. Larger Rewards
 ```
+---
+
+## 🌐 Production Deployment
+
+This project is deployed using free hosting services, demonstrating a complete production-ready setup.
+
+### Deployment Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                    PRODUCTION DEPLOYMENT                             │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│   GitHub Pages          Render.com            Sepolia Testnet        │
+│   ┌──────────────┐     ┌──────────────┐     ┌──────────────┐        │
+│   │   Frontend   │────▶│   Backend    │────▶│   Contract   │        │
+│   │   (Static)   │     │   (Go API)   │     │  (Solidity)  │        │
+│   └──────────────┘     └──────────────┘     └──────────────┘        │
+│         │                     │                    │                 │
+│    index.html            WebSocket             processReward()       │
+│    app.js                 REST API              getBalance()         │
+│    config.js              go-ethereum           getStats()           │
+│                                                                      │
+│   URL:                   URL:                   Address:             │
+│   hitarthp01.github.io   chainpay-protocol     0x6F97e4B86084C...   │
+│   /ChainPay-Protocol     .onrender.com                               │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### Live URLs
+
+| Component | Service | URL |
+|-----------|---------|-----|
+| Frontend | GitHub Pages | [hitarthp01.github.io/ChainPay-Protocol](https://hitarthp01.github.io/ChainPay-Protocol/frontend/) |
+| Backend | Render.com | [chainpay-protocol.onrender.com](https://chainpay-protocol.onrender.com/api/health) |
+| Contract | Sepolia | [Etherscan](https://sepolia.etherscan.io/address/0x6F97e4B86084C66244C76bF1Ab632E8B82aB3637) |
+
+### Frontend Configuration (config.js)
+
+The frontend auto-detects its environment:
+
+```javascript
+const ChainPayConfig = {
+    // Auto-detect local vs deployed
+    isLocal: window.location.hostname === 'localhost',
+    
+    // Production backend URL
+    deployedBackendUrl: 'https://chainpay-protocol.onrender.com',
+    
+    // Contract on Sepolia
+    contracts: {
+        sepolia: {
+            chainId: 11155111,
+            rewardTreasury: '0x6F97e4B86084C66244C76bF1Ab632E8B82aB3637'
+        }
+    },
+    
+    // Demo mode when backend unavailable
+    get demoMode() {
+        return !this.backendUrl;
+    }
+};
+```
+
+### Backend Environment Variables
+
+The Go backend reads configuration from environment variables:
+
+```bash
+RPC_ENDPOINT=https://eth-sepolia.g.alchemy.com/v2/your-key
+CONTRACT_ADDRESS=0x6F97e4B86084C66244C76bF1Ab632E8B82aB3637
+SIGNER_PRIVATE_KEY=your-private-key  # Wallet that signs reward transactions
+HTTP_PORT=8080
+```
+
+### Demo Mode
+
+When the frontend cannot connect to the backend (e.g., backend sleeping on free tier), it automatically switches to **Demo Mode**:
+
+- Generates real Ethereum key pairs (ephemeral wallets)
+- Simulates heartbeats and rewards locally
+- Shows simulated transaction hashes
+- Displays "🎮 Demo Mode" indicator
+
+This ensures the app is always functional for demonstrations, even without a running backend.
+
+---
+
+## 🚀 Scaling to Production
+
+### 1. Meaningful Rewards
+```
 Demo:    1,000 wei = $0.000000000003
 Real:    100,000,000,000,000 wei = 0.0001 ETH ≈ $0.30
 ```
 
-### 3. Treasury Security
+### 2. Treasury Security
 - **Never** hardcode private keys
 - Use Hardware Security Module (HSM)
 - Or cloud KMS (AWS KMS, Azure Key Vault)
 - Multi-signature for large withdrawals
 
-### 4. Anti-Fraud Measures
+### 3. Anti-Fraud Measures
 - Proof of attention (eye tracking APIs)
 - CAPTCHA challenges
 - Rate limiting per IP/wallet
 - Machine learning for bot detection
 
-### 5. User Withdrawals
+### 4. User Withdrawals
 - Let users claim to external wallets
 - Minimum withdrawal thresholds
 - Gas fee considerations

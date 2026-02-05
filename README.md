@@ -1,6 +1,14 @@
 # ChainPay Protocol - Watch-to-Earn Prototype
 
-A decentralized "Watch-to-Earn" system that demonstrates real-time micro-payouts to website visitors using a private Ethereum-compatible blockchain.
+A decentralized "Watch-to-Earn" system that demonstrates real-time micro-payouts to website visitors using Ethereum blockchain.
+
+## 🌐 Live Demo
+
+| Component | URL |
+|-----------|-----|
+| **Frontend** | [hitarthp01.github.io/ChainPay-Protocol](https://hitarthp01.github.io/ChainPay-Protocol/frontend/) |
+| **Backend API** | [chainpay-protocol.onrender.com](https://chainpay-protocol.onrender.com) |
+| **Smart Contract** | [View on Sepolia Etherscan](https://sepolia.etherscan.io/address/0x6F97e4B86084C66244C76bF1Ab632E8B82aB3637) |
 
 ## 🎯 Overview
 
@@ -8,7 +16,7 @@ Traditional ad-revenue models are opaque. ChainPay creates transparency by settl
 
 ### Key Features
 
-- **Real Blockchain Payments**: Every reward is a real Ethereum transaction
+- **Real Blockchain Payments**: Every reward is a real Ethereum transaction on Sepolia testnet
 - **Micro-Granularity**: Rewards denominated in Wei (10⁻¹⁸ ETH)
 - **Ephemeral Wallets**: Browser-generated wallets for instant participation
 - **Live Updates**: WebSocket-powered real-time balance tracking
@@ -301,46 +309,73 @@ Default reward: **1000 wei** per heartbeat (every 5 seconds)
 3. Make your changes
 4. Submit a pull request
 
-## 🌐 Free Hosting / Deployment
+## 🌐 Deployment Guide
 
-### GitHub Pages (Frontend Demo)
+This project is deployed using free hosting services:
 
-The easiest way to share your project! Push to GitHub and enable Pages:
+### Current Deployment Stack
 
-1. **Push to GitHub**:
-   ```bash
-   git add .
-   git commit -m "Add deployment config"
-   git push origin main
+| Component | Service | URL |
+|-----------|---------|-----|
+| Frontend | GitHub Pages | `hitarthp01.github.io/ChainPay-Protocol/frontend/` |
+| Backend | Render.com | `chainpay-protocol.onrender.com` |
+| Smart Contract | Sepolia Testnet | `0x6F97e4B86084C66244C76bF1Ab632E8B82aB3637` |
+
+### Deploy Your Own
+
+#### 1. Frontend (GitHub Pages)
+
+The frontend auto-deploys via GitHub Actions:
+
+```bash
+git push origin main
+# GitHub Actions workflow (.github/workflows/deploy.yml) handles deployment
+```
+
+Go to repo **Settings → Pages → Source: GitHub Actions**
+
+#### 2. Backend (Render.com)
+
+1. Create account at [render.com](https://render.com)
+2. New → Web Service → Connect your GitHub repo
+3. Configure:
+   - **Root Directory**: `backend`
+   - **Runtime**: Go
+   - **Build Command**: `go build -o server .`
+   - **Start Command**: `./server`
+4. Add Environment Variables:
+   ```
+   RPC_ENDPOINT=https://eth-sepolia.g.alchemy.com/v2/your-key
+   CONTRACT_ADDRESS=0x6F97e4B86084C66244C76bF1Ab632E8B82aB3637
+   SIGNER_PRIVATE_KEY=your-wallet-private-key
    ```
 
-2. **Enable GitHub Pages**:
-   - Go to your repo → Settings → Pages
-   - Source: "GitHub Actions"
-   - The workflow in `.github/workflows/deploy.yml` will auto-deploy
+#### 3. Smart Contract (Sepolia Testnet)
 
-3. **Access your demo**:
-   - URL: `https://yourusername.github.io/ChainPay-Protocol`
+Prerequisites:
+- MetaMask wallet with Sepolia ETH ([Get free Sepolia ETH](https://cloud.google.com/application/web3/faucet/ethereum/sepolia))
+- Alchemy account for RPC URL ([alchemy.com](https://alchemy.com))
 
-> **Note**: GitHub Pages runs in **Demo Mode** - it simulates blockchain interactions in the browser. Perfect for showcasing the UI and concept!
+```bash
+cd blockchain
 
-### Full Stack Deployment
+# Create .env file
+cp .env.example .env
+# Edit .env with your DEPLOYER_PRIVATE_KEY and SEPOLIA_RPC_URL
 
-For a complete deployment with real blockchain interaction:
+# Install dependencies
+npm install
 
-| Component | Free Hosting Options |
-|-----------|---------------------|
-| **Frontend** | GitHub Pages, Vercel, Netlify |
-| **Backend (Go)** | Render.com, Railway.app, Fly.io |
-| **Blockchain** | Sepolia/Mumbai testnets (free) |
-
-To deploy on a testnet, update `blockchain/hardhat.config.js`:
-```javascript
-sepolia: {
-  url: "https://rpc.sepolia.org",
-  accounts: [process.env.PRIVATE_KEY]
-}
+# Deploy to Sepolia
+npm run deploy:sepolia
 ```
+
+### Demo Mode
+
+When the frontend can't connect to the backend, it runs in **Demo Mode**:
+- Simulates blockchain interactions locally
+- Perfect for showcasing the UI
+- No real transactions occur
 
 ## 📄 License
 
